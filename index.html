@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>백만장자 A조 로또 당첨확인</title>
+<title>백만장자 로또 당첨확인</title>
 <style>
   body { margin:0; background:#f4f5f7; color:#111; font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; font-size:19px; }
   .wrap { max-width:760px; margin:0 auto; padding:16px; }
   h1 { font-size:24px; margin:8px 0 16px; text-align:center; }
   .box { background:#fff; border:1px solid #ddd; border-radius:12px; padding:16px; margin-bottom:14px; }
+  .box h2 { font-size:18px; margin:0 0 10px; }
+  .pick { display:flex; align-items:center; gap:8px; }
+  .pick label { font-weight:bold; white-space:nowrap; }
+  .pick select { flex:1; min-width:0; font-size:19px; padding:10px; border-radius:8px; border:2px solid #2563eb; background:#fff; font-weight:bold; }
   .nav { display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .nav button { font-size:18px; padding:10px 14px; border-radius:8px; border:1px solid #bbb; background:#fff; }
   .nav button:disabled { opacity:.3; }
@@ -30,25 +34,33 @@
   .ranks .on { background:#dcfce7; border-color:#22c55e; color:#166534; }
   table { width:100%; border-collapse:collapse; font-size:16px; }
   td, th { border-bottom:1px solid #eee; padding:8px 4px; text-align:center; }
-  th { color:#666; font-weight:normal; font-size:14px; }
+  th { color:#666; font-weight:normal; font-size:14px; white-space:nowrap; }
+  tr.me td { background:#eff6ff; font-weight:bold; }
+  tr.click { cursor:pointer; }
   .more { width:100%; font-size:17px; padding:12px; margin-top:10px; border-radius:8px; border:1px solid #bbb; background:#fff; }
   .msg { text-align:center; color:#666; font-size:16px; }
   .err { color:#b91c1c; }
+  .w { color:#166534; font-weight:bold; }
   .manual input { width:46px; font-size:20px; padding:6px 0; text-align:center; margin:2px; }
   .manual button { font-size:18px; padding:8px 16px; margin-top:8px; }
-  th { white-space:nowrap; }
+  .foot { text-align:center; color:#888; font-size:13px; margin-top:20px; }
   @media (max-width:480px) {
     body { font-size:17px; } h1 { font-size:20px; } .wrap { padding:12px; }
     .balls .ball { width:36px; height:36px; font-size:16px; margin:1px; }
     .ball { width:27px; height:27px; font-size:12px; margin:1px; }
     td, th { padding:6px 2px; } .nav button { padding:8px 10px; font-size:16px; }
+    .pick select { font-size:17px; }
   }
-  .foot { text-align:center; color:#888; font-size:13px; margin-top:20px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>💰 백만장자 A조 로또 당첨확인</h1>
+  <h1>💰 백만장자 로또 당첨확인</h1>
+
+  <div class="box pick">
+    <label for="jo">우리 조</label>
+    <select id="jo"><option>불러오는 중...</option></select>
+  </div>
 
   <div class="box">
     <div class="nav">
@@ -61,434 +73,52 @@
 
   <div id="out"><p class="msg">동행복권에서 당첨번호를 가져오고 있어요...</p></div>
 
+  <div class="box" id="allBox" style="display:none">
+    <h2>📋 이번 회차 전체 조 한눈에</h2>
+    <p class="msg">줄을 누르면 그 조 결과로 바뀌어요.</p>
+    <table>
+      <thead><tr><th>조</th><th>1등</th><th>2등</th><th>3등</th><th>4등</th><th>5등</th><th>최고</th></tr></thead>
+      <tbody id="all"></tbody>
+    </table>
+  </div>
+
   <div class="foot">
     당첨번호 출처: 동행복권 (dhlottery.co.kr) · 추첨은 매주 토요일 저녁 8시 35분<br>
     재미로 만든 무료 프로그램이에요. 정확한 당첨 여부는 꼭 동행복권에서 한 번 더 확인하세요.
   </div>
 </div>
 
-<!--
-  ▼▼▼ 우리 A조 번호 (2026년 9월부터 고정 베팅, 134줄 × A/B/C = 402게임) ▼▼▼
-  번호를 바꾸려면 아래 목록만 고치면 돼요. 한 줄에 한 게임: "줄번호+게임  번호 6개"
--->
-<script type="text/plain" id="combos">
-1A    3 10 23 33 37 40
-1B    3 10 23 33 37 41
-1C    3 10 23 33 37 45
-2A    4 10 23 33 37 40
-2B    4 10 23 33 37 41
-2C    4 10 23 33 37 45
-3A    5 10 23 33 37 40
-3B    5 10 23 33 37 41
-3C    5 10 23 33 37 45
-4A    3 12 23 33 37 40
-4B    3 12 23 33 37 41
-4C    3 12 23 33 37 45
-5A    4 12 23 33 37 40
-5B    4 12 23 33 37 41
-5C    4 12 23 33 37 45
-6A    5 12 23 33 37 40
-6B    5 12 23 33 37 41
-6C    5 12 23 33 37 45
-7A    3 15 23 33 37 40
-7B    3 15 23 33 37 41
-7C    3 15 23 33 37 45
-8A    4 15 23 33 37 40
-8B    4 15 23 33 37 41
-8C    4 15 23 33 37 45
-9A    5 15 23 33 37 40
-9B    5 15 23 33 37 41
-9C    5 15 23 33 37 45
-10A   3 10 24 33 37 40
-10B   3 10 24 33 37 41
-10C   3 10 24 33 37 45
-11A   4 10 24 33 37 40
-11B   4 10 24 33 37 41
-11C   4 10 24 33 37 45
-12A   5 10 24 33 37 40
-12B   5 10 24 33 37 41
-12C   5 10 24 33 37 45
-13A   3 12 24 33 37 40
-13B   3 12 24 33 37 41
-13C   3 12 24 33 37 45
-14A   4 12 24 33 37 40
-14B   4 12 24 33 37 41
-14C   4 12 24 33 37 45
-15A   5 12 24 33 37 40
-15B   5 12 24 33 37 41
-15C   5 12 24 33 37 45
-16A   3 15 24 33 37 40
-16B   3 15 24 33 37 41
-16C   3 15 24 33 37 45
-17A   4 15 24 33 37 40
-17B   4 15 24 33 37 41
-17C   4 15 24 33 37 45
-18A   5 15 24 33 37 40
-18B   5 15 24 33 37 41
-18C   5 15 24 33 37 45
-19A   3 10 23 34 37 40
-19B   3 10 23 34 37 41
-19C   3 10 23 34 37 45
-20A   4 10 23 34 37 40
-20B   4 10 23 34 37 41
-20C   4 10 23 34 37 45
-21A   5 10 23 34 37 40
-21B   5 10 23 34 37 41
-21C   5 10 23 34 37 45
-22A   3 12 23 34 37 40
-22B   3 12 23 34 37 41
-22C   3 12 23 34 37 45
-23A   4 12 23 34 37 40
-23B   4 12 23 34 37 41
-23C   4 12 23 34 37 45
-24A   5 12 23 34 37 40
-24B   5 12 23 34 37 41
-24C   5 12 23 34 37 45
-25A   3 15 23 34 37 40
-25B   3 15 23 34 37 41
-25C   3 15 23 34 37 45
-26A   4 15 23 34 37 40
-26B   4 15 23 34 37 41
-26C   4 15 23 34 37 45
-27A   5 15 23 34 37 40
-27B   5 15 23 34 37 41
-27C   5 15 23 34 37 45
-28A   3 10 24 34 37 40
-28B   3 10 24 34 37 41
-28C   3 10 24 34 37 45
-29A   4 10 24 34 37 40
-29B   4 10 24 34 37 41
-29C   4 10 24 34 37 45
-30A   5 10 24 34 37 40
-30B   5 10 24 34 37 41
-30C   5 10 24 34 37 45
-31A   3 12 24 34 37 40
-31B   3 12 24 34 37 41
-31C   3 12 24 34 37 45
-32A   4 12 24 34 37 40
-32B   4 12 24 34 37 41
-32C   4 12 24 34 37 45
-33A   5 12 24 34 37 40
-33B   5 12 24 34 37 41
-33C   5 12 24 34 37 45
-34A   3 15 24 34 37 40
-34B   3 15 24 34 37 41
-34C   3 15 24 34 37 45
-35A   4 15 24 34 37 40
-35B   4 15 24 34 37 41
-35C   4 15 24 34 37 45
-36A   5 15 24 34 37 40
-36B   5 15 24 34 37 41
-36C   5 15 24 34 37 45
-37A   3 10 23 33 38 40
-37B   3 10 23 33 38 41
-37C   3 10 23 33 38 45
-38A   4 10 23 33 38 40
-38B   4 10 23 33 38 41
-38C   4 10 23 33 38 45
-39A   5 10 23 33 38 40
-39B   5 10 23 33 38 41
-39C   5 10 23 33 38 45
-40A   3 12 23 33 38 40
-40B   3 12 23 33 38 41
-40C   3 12 23 33 38 45
-41A   4 12 23 33 38 40
-41B   4 12 23 33 38 41
-41C   4 12 23 33 38 45
-42A   5 12 23 33 38 40
-42B   5 12 23 33 38 41
-42C   5 12 23 33 38 45
-43A   3 15 23 33 38 40
-43B   3 15 23 33 38 41
-43C   3 15 23 33 38 45
-44A   4 15 23 33 38 40
-44B   4 15 23 33 38 41
-44C   4 15 23 33 38 45
-45A   5 15 23 33 38 40
-45B   5 15 23 33 38 41
-45C   5 15 23 33 38 45
-46A   3 10 24 33 38 40
-46B   3 10 24 33 38 41
-46C   3 10 24 33 38 45
-47A   4 10 24 33 38 40
-47B   4 10 24 33 38 41
-47C   4 10 24 33 38 45
-48A   5 10 24 33 38 40
-48B   5 10 24 33 38 41
-48C   5 10 24 33 38 45
-49A   3 12 24 33 38 40
-49B   3 12 24 33 38 41
-49C   3 12 24 33 38 45
-50A   4 12 24 33 38 40
-50B   4 12 24 33 38 41
-50C   4 12 24 33 38 45
-51A   5 12 24 33 38 40
-51B   5 12 24 33 38 41
-51C   5 12 24 33 38 45
-52A   3 15 24 33 38 40
-52B   3 15 24 33 38 41
-52C   3 15 24 33 38 45
-53A   4 15 24 33 38 40
-53B   4 15 24 33 38 41
-53C   4 15 24 33 38 45
-54A   5 15 24 33 38 40
-54B   5 15 24 33 38 41
-54C   5 15 24 33 38 45
-55A   3 10 23 34 38 40
-55B   3 10 23 34 38 41
-55C   3 10 23 34 38 45
-56A   4 10 23 34 38 40
-56B   4 10 23 34 38 41
-56C   4 10 23 34 38 45
-57A   5 10 23 34 38 40
-57B   5 10 23 34 38 41
-57C   5 10 23 34 38 45
-58A   3 12 23 34 38 40
-58B   3 12 23 34 38 41
-58C   3 12 23 34 38 45
-59A   4 12 23 34 38 40
-59B   4 12 23 34 38 41
-59C   4 12 23 34 38 45
-60A   5 12 23 34 38 40
-60B   5 12 23 34 38 41
-60C   5 12 23 34 38 45
-61A   3 15 23 34 38 40
-61B   3 15 23 34 38 41
-61C   3 15 23 34 38 45
-62A   4 15 23 34 38 40
-62B   4 15 23 34 38 41
-62C   4 15 23 34 38 45
-63A   5 15 23 34 38 40
-63B   5 15 23 34 38 41
-63C   5 15 23 34 38 45
-64A   3 10 24 34 38 40
-64B   3 10 24 34 38 41
-64C   3 10 24 34 38 45
-65A   4 10 24 34 38 40
-65B   4 10 24 34 38 41
-65C   4 10 24 34 38 45
-66A   5 10 24 34 38 40
-66B   5 10 24 34 38 41
-66C   5 10 24 34 38 45
-67A   3 12 24 34 38 40
-67B   3 12 24 34 38 41
-67C   3 12 24 34 38 45
-68A   4 12 24 34 38 40
-68B   4 12 24 34 38 41
-68C   4 12 24 34 38 45
-69A   5 12 24 34 38 40
-69B   5 12 24 34 38 41
-69C   5 12 24 34 38 45
-70A   3 15 24 34 38 40
-70B   3 15 24 34 38 41
-70C   3 15 24 34 38 45
-71A   4 15 24 34 38 40
-71B   4 15 24 34 38 41
-71C   4 15 24 34 38 45
-72A   5 15 24 34 38 40
-72B   5 15 24 34 38 41
-72C   5 15 24 34 38 45
-73A   3 10 23 33 39 40
-73B   3 10 23 33 39 41
-73C   3 10 23 33 39 45
-74A   4 10 23 33 39 40
-74B   4 10 23 33 39 41
-74C   4 10 23 33 39 45
-75A   5 10 23 33 39 40
-75B   5 10 23 33 39 41
-75C   5 10 23 33 39 45
-76A   3 12 23 33 39 40
-76B   3 12 23 33 39 41
-76C   3 12 23 33 39 45
-77A   4 12 23 33 39 40
-77B   4 12 23 33 39 41
-77C   4 12 23 33 39 45
-78A   5 12 23 33 39 40
-78B   5 12 23 33 39 41
-78C   5 12 23 33 39 45
-79A   3 15 23 33 39 40
-79B   3 15 23 33 39 41
-79C   3 15 23 33 39 45
-80A   4 15 23 33 39 40
-80B   4 15 23 33 39 41
-80C   4 15 23 33 39 45
-81A   5 15 23 33 39 40
-81B   5 15 23 33 39 41
-81C   5 15 23 33 39 45
-82A   3 10 24 33 39 40
-82B   3 10 24 33 39 41
-82C   3 10 24 33 39 45
-83A   4 10 24 33 39 40
-83B   4 10 24 33 39 41
-83C   4 10 24 33 39 45
-84A   5 10 24 33 39 40
-84B   5 10 24 33 39 41
-84C   5 10 24 33 39 45
-85A   3 12 24 33 39 40
-85B   3 12 24 33 39 41
-85C   3 12 24 33 39 45
-86A   4 12 24 33 39 40
-86B   4 12 24 33 39 41
-86C   4 12 24 33 39 45
-87A   5 12 24 33 39 40
-87B   5 12 24 33 39 41
-87C   5 12 24 33 39 45
-88A   3 15 24 33 39 40
-88B   3 15 24 33 39 41
-88C   3 15 24 33 39 45
-89A   4 15 24 33 39 40
-89B   4 15 24 33 39 41
-89C   4 15 24 33 39 45
-90A   5 15 24 33 39 40
-90B   5 15 24 33 39 41
-90C   5 15 24 33 39 45
-91A   3 10 23 34 39 40
-91B   3 10 23 34 39 41
-91C   3 10 23 34 39 45
-92A   4 10 23 34 39 40
-92B   4 10 23 34 39 41
-92C   4 10 23 34 39 45
-93A   5 10 23 34 39 40
-93B   5 10 23 34 39 41
-93C   5 10 23 34 39 45
-94A   3 12 23 34 39 40
-94B   3 12 23 34 39 41
-94C   3 12 23 34 39 45
-95A   4 12 23 34 39 40
-95B   4 12 23 34 39 41
-95C   4 12 23 34 39 45
-96A   5 12 23 34 39 40
-96B   5 12 23 34 39 41
-96C   5 12 23 34 39 45
-97A   3 15 23 34 39 40
-97B   3 15 23 34 39 41
-97C   3 15 23 34 39 45
-98A   4 15 23 34 39 40
-98B   4 15 23 34 39 41
-98C   4 15 23 34 39 45
-99A   5 15 23 34 39 40
-99B   5 15 23 34 39 41
-99C   5 15 23 34 39 45
-100A  3 10 24 34 39 40
-100B  3 10 24 34 39 41
-100C  3 10 24 34 39 45
-101A  4 10 24 34 39 40
-101B  4 10 24 34 39 41
-101C  4 10 24 34 39 45
-102A  5 10 24 34 39 40
-102B  5 10 24 34 39 41
-102C  5 10 24 34 39 45
-103A  3 12 24 34 39 40
-103B  3 12 24 34 39 41
-103C  3 12 24 34 39 45
-104A  4 12 24 34 39 40
-104B  4 12 24 34 39 41
-104C  4 12 24 34 39 45
-105A  5 12 24 34 39 40
-105B  5 12 24 34 39 41
-105C  5 12 24 34 39 45
-106A  3 15 24 34 39 40
-106B  3 15 24 34 39 41
-106C  3 15 24 34 39 45
-107A  4 15 24 34 39 40
-107B  4 15 24 34 39 41
-107C  4 15 24 34 39 45
-108A  5 15 24 34 39 40
-108B  5 15 24 34 39 41
-108C  5 15 24 34 39 45
-109A  7 12 19 25 38 43
-109B  7 13 19 25 38 44
-109C  6 13 19 25 38 42
-110A  7 11 19 25 38 45
-110B  6 11 14 25 38 44
-110C  6 10 18 26 37 45
-111A  6 12 17 26 38 42
-111B  6 11 17 26 38 42
-111C  1 12 19 27 36 44
-112A  6 12 17 26 37 42
-112B  6 11 17 26 37 42
-112C  1 12 19 27 37 44
-113A  6 12 17 26 36 42
-113B  6 11 17 26 35 42
-113C  1 12 19 27 38 43
-114A  5 12 17 26 35 42
-114B  1 12 19 25 33 43
-114C  1 12 19 27 36 43
-115A  5 12 17 26 34 42
-115B  1 12 19 25 34 43
-115C  1 12 19 27 39 43
-116A  1 12 17 25 37 43
-116B  2 10 18 26 36 45
-116C  2 12 17 26 33 44
-117A  1 12 17 26 37 42
-117B  2 10 18 26 39 45
-117C  2 12 17 26 36 44
-118A  7 12 17 26 37 41
-118B  2 10 18 26 38 43
-118C  2 12 17 26 34 45
-119A  7 11 17 26 34 42
-119B  2 10 18 26 37 43
-119C  2 12 17 26 38 43
-120A  7 11 19 26 37 42
-120B  2 10 18 26 39 43
-120C  2 12 17 26 37 41
-121A  2 10 13 27 38 43
-121B  6 10 19 25 38 40
-121C  7 11 15 29 32 43
-122A  2 10 13 27 37 41
-122B  6 10 19 25 37 44
-122C  7 11 15 29 33 44
-123A  2 10 13 27 36 44
-123B  6 10 19 25 36 43
-123C  7 11 15 29 35 41
-124A  2 10 13 27 35 42
-124B  6 10 19 25 35 41
-124C  7 11 15 29 38 45
-125A  2 10 13 27 34 44
-125B  6 10 19 25 33 45
-125C  7 11 15 29 37 40
-126A  2 11 16 27 39 45
-126B  2 12 16 26 37 43
-126C  6 13 19 24 38 40
-127A  2 11 16 27 37 43
-127B  2 12 16 26 36 45
-127C  6 13 19 24 37 41
-128A  2 11 16 27 36 44
-128B  2 12 16 26 35 42
-128C  6 13 19 24 36 43
-129A  2 11 16 27 35 42
-129B  2 12 16 26 33 41
-129C  6 12 19 24 35 44
-130A  2 11 16 27 33 41
-130B  2 12 16 26 39 44
-130C  6 12 19 24 33 45
-131A  7 19 25 27 37 42
-131B  6 10 18 26 39 43
-131C  7 12 17 27 33 43
-132A  7 19 25 27 38 41
-132B  6 10 18 26 34 44
-132C  7 12 17 27 36 42
-133A  7 19 25 27 34 43
-133B  6 10 18 26 36 42
-133C  7 12 17 27 34 41
-134A  7 19 25 27 36 44
-134B  6 10 18 26 33 41
-134C  7 12 17 27 35 40
-</script>
-
 <script>
-// 우리 번호가 처음 적용된 회차 (2026-09-05 추첨, 제1240회)
+// 조합 번호가 처음 적용된 회차 (2026-09-05 추첨, 제1240회)
 const FIRST_EP = 1240;
 const API = 'https://www.dhlottery.co.kr/lt645/selectPstLt645InfoNew.do?srchDir=center&srchLtEpsd=';
 const RANKS = ['1등', '2등', '3등', '4등', '5등'];
-
-const GAMES = document.getElementById('combos').textContent.trim().split('\n')
-  .map(l => l.trim()).filter(l => l && !l.startsWith('#'))
-  .map(l => { const p = l.split(/\s+/); return { id: p[0], nums: p.slice(1, 7).map(Number) }; });
-
 const $ = id => document.getElementById(id);
+
+let TEAMS = [];      // [{no, name, games:[{id, nums}]}]
+let team = null;     // 지금 보고 있는 조
 let draws = {};      // 회차 → {ep, date, win[6], bonus}
-let latest = 0, current = 0;
+let latest = 0, current = 0, manual = null;
+
+// combos.txt 읽기: "== 번호 | 이름" 다음 줄부터 한 줄에 "A게임 | B게임 | C게임"
+function parseCombos(text) {
+  const teams = [];
+  let t = null, line = 0;
+  for (const raw of text.split('\n')) {
+    const l = raw.trim();
+    if (!l || l.startsWith('#')) continue;
+    if (l.startsWith('==')) {
+      const [no, name] = l.slice(2).split('|').map(s => s.trim());
+      t = { no: +no, name: name || '', games: [] }; teams.push(t); line = 0;
+      continue;
+    }
+    line++;
+    l.split('|').forEach((g, k) => t.games.push({ id: line + 'ABC'[k], nums: g.trim().split(/\s+/).map(Number) }));
+  }
+  return teams;
+}
+
+function teamLabel(t) { return t.no + '조' + (t.name ? ' · ' + t.name : ''); }
 
 // 지금 시각 기준으로 가장 최근에 추첨했을 회차 (제1회 = 2002-12-07)
 function expectedEpisode() {
@@ -510,9 +140,37 @@ async function load(ep) {
   return json.data.list.length;
 }
 
+// 주소 끝 ?jo=12 → 12조. 없으면 이 기기에서 마지막으로 본 조, 그것도 없으면 1조
+function initialTeam() {
+  const q = +new URLSearchParams(location.search).get('jo');
+  let saved = 0;
+  try { saved = +localStorage.getItem('jo'); } catch (e) {}
+  return TEAMS.find(t => t.no === q) || TEAMS.find(t => t.no === saved) || TEAMS[0];
+}
+
+function selectTeam(no) {
+  team = TEAMS.find(t => t.no === no) || TEAMS[0];
+  $('jo').value = team.no;
+  try { localStorage.setItem('jo', team.no); } catch (e) {}
+  history.replaceState(null, '', '?jo=' + team.no);
+  if (manual) render(manual.win, manual.bonus, 'manualOut');
+  else if (draws[current]) show(current);
+}
+
 async function start() {
   try {
-    let ep = expectedEpisode();
+    TEAMS = parseCombos(await (await fetch('combos.txt', { cache: 'no-cache' })).text());
+  } catch (e) {
+    $('out').innerHTML = '<p class="msg err">조합표(combos.txt)를 불러오지 못했어요.</p>';
+    return;
+  }
+  $('jo').innerHTML = TEAMS.map(t => `<option value="${t.no}">${teamLabel(t)}</option>`).join('');
+  $('jo').onchange = () => selectTeam(+$('jo').value);
+  team = initialTeam();
+  $('jo').value = team.no;
+
+  try {
+    const ep = expectedEpisode();
     if (!(await load(ep))) await load(ep - 1);   // 결과가 아직 안 올라왔으면 지난주
     latest = Math.max(...Object.keys(draws).map(Number));
     if (!isFinite(latest)) throw new Error('empty');
@@ -537,26 +195,29 @@ async function show(ep) {
 function color(n) { return n <= 10 ? 'y' : n <= 20 ? 'b' : n <= 30 ? 'r' : n <= 40 ? 'g' : 'gr'; }
 function ball(n, cls) { return `<span class="ball ${cls || color(n)}">${n}</span>`; }
 
-function render(win, bonus, target = 'out') {
-  const ws = new Set(win);
-  const rows = GAMES.map(g => {
+function check(games, ws, bonus) {
+  return games.map(g => {
     const match = g.nums.filter(n => ws.has(n)).length;
     const bonusHit = g.nums.includes(bonus);
     const rank = match === 6 ? 0 : match === 5 && bonusHit ? 1 : match === 5 ? 2 : match === 4 ? 3 : match === 3 ? 4 : -1;
     return { ...g, match, bonusHit, rank };
-  }).sort((a, b) => b.match - a.match || b.bonusHit - a.bonusHit);
+  });
+}
+
+function render(win, bonus, target = 'out') {
+  const ws = new Set(win);
+  const rows = check(team.games, ws, bonus).sort((a, b) => b.match - a.match || b.bonusHit - a.bonusHit);
 
   const cnt = [0, 0, 0, 0, 0];
   rows.forEach(r => { if (r.rank >= 0) cnt[r.rank]++; });
-  const wins = rows.filter(r => r.rank >= 0);
+  const wins = rows.filter(r => r.rank >= 0).length;
   const best = rows[0].match;
 
   let html = '';
-  if (wins.length) {
-    const top = cnt.findIndex(c => c > 0);
-    html += `<div class="big win">🎉 축하합니다! ${RANKS[top]} 당첨!<small>${GAMES.length}게임 중 ${wins.length}게임 당첨</small></div>`;
+  if (wins) {
+    html += `<div class="big win">🎉 ${team.no}조 축하합니다! ${RANKS[cnt.findIndex(c => c > 0)]} 당첨!<small>${team.games.length}게임 중 ${wins}게임 당첨</small></div>`;
   } else {
-    html += `<div class="big lose">아쉽게도 이번엔 당첨이 없어요<small>가장 많이 맞은 게임: ${best}개</small></div>`;
+    html += `<div class="big lose">${team.no}조는 이번엔 당첨이 없어요<small>가장 많이 맞은 게임: ${best}개</small></div>`;
   }
   html += '<div class="box"><div class="ranks">' +
     RANKS.map((n, i) => `<div class="${cnt[i] ? 'on' : ''}">${n}<b>${cnt[i]}</b></div>`).join('') + '</div></div>';
@@ -568,13 +229,33 @@ function render(win, bonus, target = 'out') {
   if (!rows.some(r => r.match >= 3)) html += '<p class="msg">3개 이상 맞은 게임이 없어요.</p>';
   html += `<button class="more" onclick="document.getElementById('rest').style.display='';this.remove()">나머지 게임도 모두 보기</button></div>`;
   $(target).innerHTML = html;
+
+  renderAll(ws, bonus);
 }
 
 function rowsHtml(list, ws, bonus) {
   return list.map(r => `<tr><td>${r.id}</td><td>` +
     r.nums.map(n => ws.has(n) ? ball(n) : n === bonus ? ball(n, color(n) + ' bon') : ball(n, 'dim')).join('') +
     `</td><td><b>${r.match}</b>${r.bonusHit ? '<br><small>+보너스</small>' : ''}</td>` +
-    `<td>${r.rank >= 0 ? '<b style="color:#166534">' + RANKS[r.rank] + '</b>' : '-'}</td></tr>`).join('');
+    `<td>${r.rank >= 0 ? '<span class="w">' + RANKS[r.rank] + '</span>' : '-'}</td></tr>`).join('');
+}
+
+// 모든 조를 한 표로: 높은 등수가 많은 조가 위로
+function renderAll(ws, bonus) {
+  const list = TEAMS.map(t => {
+    const rows = check(t.games, ws, bonus);
+    const cnt = [0, 0, 0, 0, 0];
+    rows.forEach(r => { if (r.rank >= 0) cnt[r.rank]++; });
+    return { t, cnt, best: Math.max(...rows.map(r => r.match)) };
+  }).sort((a, b) => {
+    for (let i = 0; i < 5; i++) if (a.cnt[i] !== b.cnt[i]) return b.cnt[i] - a.cnt[i];
+    return a.t.no - b.t.no;
+  });
+  $('all').innerHTML = list.map(({ t, cnt, best }) =>
+    `<tr class="click${t === team ? ' me' : ''}" onclick="selectTeam(${t.no});scrollTo({top:0,behavior:'smooth'})">` +
+    `<td>${t.no}조</td>` + cnt.map(c => `<td>${c ? '<span class="w">' + c + '</span>' : '-'}</td>`).join('') +
+    `<td>${best}개</td></tr>`).join('');
+  $('allBox').style.display = '';
 }
 
 // 동행복권 연결이 안 될 때: 번호를 직접 넣어서 확인
@@ -588,8 +269,9 @@ function showManual() {
   $('manualGo').onclick = () => {
     const v = [...document.querySelectorAll('.manual input')].map(i => +i.value);
     if (v.some(n => !(n >= 1 && n <= 45)) || new Set(v).size !== 7) { alert('1~45 사이의 서로 다른 번호 7개를 넣어주세요.'); return; }
-    $('balls').innerHTML = v.slice(0, 6).map(n => ball(n)).join('') + ' <b>+</b> ' + ball(v[6]);
-    render(v.slice(0, 6), v[6], 'manualOut');
+    manual = { win: v.slice(0, 6), bonus: v[6] };
+    $('balls').innerHTML = manual.win.map(n => ball(n)).join('') + ' <b>+</b> ' + ball(manual.bonus);
+    render(manual.win, manual.bonus, 'manualOut');
   };
 }
 
