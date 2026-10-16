@@ -43,6 +43,17 @@
   .w { color:#166534; font-weight:bold; }
   .manual input { width:46px; font-size:20px; padding:6px 0; text-align:center; margin:2px; }
   .manual button { font-size:18px; padding:8px 16px; margin-top:8px; }
+  .news { width:100%; font-size:18px; padding:12px; margin-top:12px; border-radius:8px; border:0; background:#fef3c7; color:#92400e; font-weight:bold; }
+  .pop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:10; }
+  .pop .card { background:#fff; border-radius:16px; padding:22px 18px; width:100%; max-width:440px; max-height:90vh; overflow:auto; text-align:center; }
+  .pop h3 { font-size:22px; margin:0 0 4px; }
+  .pop .sub { color:#666; font-size:15px; margin-bottom:10px; }
+  .pop .line { font-size:20px; margin:10px 0; }
+  .pop .top { font-size:22px; font-weight:bold; color:#166534; background:#dcfce7; border-radius:10px; padding:10px; margin:8px 0; }
+  .pop .real { background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px; margin:12px 0; font-size:18px; }
+  .pop .chips { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:6px 0 10px; }
+  .pop .chips button { font-size:17px; padding:6px 10px; border-radius:999px; border:1px solid #22c55e; background:#f0fdf4; color:#166534; }
+  .pop .ok { width:100%; font-size:20px; padding:14px; margin-top:12px; border-radius:10px; border:0; background:#2563eb; color:#fff; font-weight:bold; }
   .foot { text-align:center; color:#888; font-size:13px; margin-top:20px; }
   @media (max-width:480px) {
     body { font-size:17px; } h1 { font-size:20px; } .wrap { padding:12px; }
@@ -69,7 +80,9 @@
       <button id="next">다음 ▶</button>
     </div>
     <div class="balls" id="balls"></div>
+    <button class="news" id="newsBtn" style="display:none">📢 이 회차 당첨된 조 보기</button>
   </div>
+  <div class="pop" id="pop" style="display:none" onclick="if(event.target===this)closePop()"><div class="card" id="popCard"></div></div>
 
   <div id="out"><p class="msg">동행복권에서 당첨번호를 가져오고 있어요...</p></div>
 
@@ -174,7 +187,10 @@ async function start() {
     if (!(await load(ep))) await load(ep - 1);   // 결과가 아직 안 올라왔으면 지난주
     latest = Math.max(...Object.keys(draws).map(Number));
     if (!isFinite(latest)) throw new Error('empty');
-    show(latest);
+    await show(latest);
+    let seen = 0;
+    try { seen = +localStorage.getItem('popupSeen'); } catch (e) {}
+    if (seen !== latest) openPop();
   } catch (e) {
     showManual();
   }
@@ -190,6 +206,7 @@ async function show(ep) {
   $('ep').innerHTML = `제${d.ep}회 <small>${d.date} 추첨${ep === latest ? ' · 최신' : ''}</small>`;
   $('balls').innerHTML = d.win.map(n => ball(n)).join('') + ' <b>+</b> ' + ball(d.bonus);
   render(d.win, d.bonus);
+  $('newsBtn').style.display = '';
 }
 
 function color(n) { return n <= 10 ? 'y' : n <= 20 ? 'b' : n <= 30 ? 'r' : n <= 40 ? 'g' : 'gr'; }
@@ -240,9 +257,9 @@ function rowsHtml(list, ws, bonus) {
     `<td>${r.rank >= 0 ? '<span class="w">' + RANKS[r.rank] + '</span>' : '-'}</td></tr>`).join('');
 }
 
-// 모든 조를 한 표로: 높은 등수가 많은 조가 위로
-function renderAll(ws, bonus) {
-  const list = TEAMS.map(t => {
+// 모든 조 결과: 높은 등수가 많은 조가 위로
+function summarize(ws, bonus) {
+  return TEAMS.map(t => {
     const rows = check(t.games, ws, bonus);
     const cnt = [0, 0, 0, 0, 0];
     rows.forEach(r => { if (r.rank >= 0) cnt[r.rank]++; });
@@ -251,11 +268,54 @@ function renderAll(ws, bonus) {
     for (let i = 0; i < 5; i++) if (a.cnt[i] !== b.cnt[i]) return b.cnt[i] - a.cnt[i];
     return a.t.no - b.t.no;
   });
+}
+
+function renderAll(ws, bonus) {
+  const list = summarize(ws, bonus);
   $('all').innerHTML = list.map(({ t, cnt, best }) =>
     `<tr class="click${t === team ? ' me' : ''}" onclick="selectTeam(${t.no});scrollTo({top:0,behavior:'smooth'})">` +
     `<td>${t.no}조</td>` + cnt.map(c => `<td>${c ? '<span class="w">' + c + '</span>' : '-'}</td>`).join('') +
     `<td>${best}개</td></tr>`).join('');
   $('allBox').style.display = '';
+}
+
+// 이 회차에 당첨된 조를 알려주는 팝업
+function openPop() {
+  const d = draws[current];
+  if (!d) return;
+  const list = summarize(new Set(d.win), d.bonus);
+  const winners = list.filter(x => x.cnt.some(c => c));
+  const best = r => r.cnt.findIndex(c => c > 0);
+  const chip = x => `<button onclick="selectTeam(${x.t.no});closePop()">${x.t.no}조 ${RANKS[best(x)]} ${x.cnt[best(x)]}게임</button>`;
+
+  let h = `<h3>📢 제${d.ep}회 당첨 소식</h3><div class="sub">${d.date} 추첨</div>`;
+  h += '<div>' + d.win.map(n => ball(n)).join('') + ' <b>+</b> ' + ball(d.bonus) + '</div>';
+  // 실제로 돈 내고 산 조는 따로 한 줄
+  list.filter(x => x.t.name.includes('실제')).sort((a, b) => a.t.no - b.t.no).forEach(x => {
+    const b = best(x);
+    h += `<div class="real">💵 <b>${teamLabel(x.t)}</b><br>${b >= 0 ? RANKS.map((n, i) => x.cnt[i] ? n + ' ' + x.cnt[i] + '게임' : '').filter(Boolean).join(', ') + ' 당첨!' : '이번엔 당첨 없음'}</div>`;
+  });
+  if (!winners.length) {
+    h += '<p class="line">이번 회차는 당첨된 조가 없어요 😢</p>';
+  } else {
+    h += `<p class="line">🎉 <b>${winners.length}개 조</b>가 당첨됐어요!</p>`;
+    // 1~3등은 크게
+    winners.filter(x => best(x) <= 2).forEach(x =>
+      h += `<div class="top">🏆 ${x.t.no}조 ${RANKS[best(x)]} ${x.cnt[best(x)]}게임</div>`);
+    const fourth = winners.filter(x => best(x) === 3);
+    if (fourth.length) h += '<div class="sub">4등 나온 조</div><div class="chips">' + fourth.slice(0, 8).map(chip).join('') +
+      (fourth.length > 8 ? `<span class="sub">외 ${fourth.length - 8}개 조</span>` : '') + '</div>';
+    const fifth = winners.filter(x => best(x) === 4);
+    if (fifth.length) h += `<div class="sub">5등만 나온 조: ${fifth.length}개</div>`;
+  }
+  h += '<button class="ok" onclick="closePop()">확인</button>';
+  $('popCard').innerHTML = h;
+  $('pop').style.display = '';
+}
+
+function closePop() {
+  $('pop').style.display = 'none';
+  try { localStorage.setItem('popupSeen', latest); } catch (e) {}
 }
 
 // 동행복권 연결이 안 될 때: 번호를 직접 넣어서 확인
@@ -275,6 +335,7 @@ function showManual() {
   };
 }
 
+$('newsBtn').onclick = openPop;
 $('prev').onclick = () => show(current - 1);
 $('next').onclick = () => show(current + 1);
 start();
