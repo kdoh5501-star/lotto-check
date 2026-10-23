@@ -39,6 +39,7 @@
   tr.click { cursor:pointer; }
   .more { width:100%; font-size:17px; padding:12px; margin-top:10px; border-radius:8px; border:1px solid #bbb; background:#fff; }
   .msg { text-align:center; color:#666; font-size:16px; }
+  .note { background:#fff7ed; border:1px solid #fdba74; color:#9a3412; border-radius:10px; padding:10px; margin-bottom:14px; font-size:16px; text-align:center; }
   .err { color:#b91c1c; }
   .w { color:#166534; font-weight:bold; }
   .manual input { width:46px; font-size:20px; padding:6px 0; text-align:center; margin:2px; }
@@ -121,8 +122,8 @@ function parseCombos(text) {
     const l = raw.trim();
     if (!l || l.startsWith('#')) continue;
     if (l.startsWith('==')) {
-      const [no, name] = l.slice(2).split('|').map(s => s.trim());
-      t = { no: +no, name: name || '', games: [] }; teams.push(t); line = 0;
+      const [no, name, since] = l.slice(2).split('|').map(s => s.trim());
+      t = { no: +no, name: name || '', since: +since || 0, games: [] }; teams.push(t); line = 0;
       continue;
     }
     line++;
@@ -231,6 +232,9 @@ function render(win, bonus, target = 'out') {
   const best = rows[0].match;
 
   let html = '';
+  // 이 조 번호를 쓰기 시작한 회차보다 앞이면 참고용이라고 알려줌
+  if (target === 'out' && current < team.since)
+    html += `<div class="note">※ ${team.no}조는 제${team.since}회부터 새 번호로 바뀌었어요.<br>이 회차 결과는 새 번호로 계산한 참고용이에요.</div>`;
   if (wins) {
     html += `<div class="big win">🎉 ${team.no}조 축하합니다! ${RANKS[cnt.findIndex(c => c > 0)]} 당첨!<small>${team.games.length}게임 중 ${wins}게임 당첨</small></div>`;
   } else {
@@ -293,7 +297,7 @@ function openPop() {
   // 실제로 돈 내고 산 조는 따로 한 줄
   list.filter(x => x.t.name.includes('실제')).sort((a, b) => a.t.no - b.t.no).forEach(x => {
     const b = best(x);
-    h += `<div class="real">💵 <b>${teamLabel(x.t)}</b><br>${b >= 0 ? RANKS.map((n, i) => x.cnt[i] ? n + ' ' + x.cnt[i] + '게임' : '').filter(Boolean).join(', ') + ' 당첨!' : '이번엔 당첨 없음'}</div>`;
+    h += `<div class="real">💵 <b>${teamLabel(x.t)}</b><br>${d.ep < x.t.since ? '제' + x.t.since + '회부터 새 번호로 사요' : b >= 0 ? RANKS.map((n, i) => x.cnt[i] ? n + ' ' + x.cnt[i] + '게임' : '').filter(Boolean).join(', ') + ' 당첨!' : '이번엔 당첨 없음'}</div>`;
   });
   if (!winners.length) {
     h += '<p class="line">이번 회차는 당첨된 조가 없어요 😢</p>';
